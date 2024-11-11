@@ -1,0 +1,92 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: flex-start; /* Align items at the top */
+    font-size: 14px;
+    margin: 0; /* Remove default margin */
+}
+
+#gameWorld {
+    border: 1px solid black;
+    background-color: white;
+    margin-right: 20px;
+}
+
+#controlPanel {
+    display: flex;
+    flex-direction: column; /* Stack child elements vertically */
+    width: 300px;
+}
+
+#parameters {
+    border: 2px solid #03ecd3;
+    padding: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+}
+
+#parameters p {
+    margin-top: 0;
+    font-weight: bold;
+}
+
+#parameters label {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+#parameters input {
+    width: calc(100% - 12px); /* Full width minus padding and border */
+    padding: 2px;
+    box-sizing: border-box;
+    font-size: 12px;
+}
+
+#parameters button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 5px;
+    background-color: #007bff;
+    color: white;    
+    border: 1p solid blue;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#parameters button:hover {
+    background-color: #0056b3;
+}
+
+#options {
+    margin-top: 10px;
+}
+
+#options input {
+    margin-right: 5px;
+}
+
+#options label {
+    margin-right: 10px;
+}
+
+
+/* Default style */
+.db-status {
+    border: 1p solid black;
+    text-align: center;
+    padding: 5px;
+    margin-bottom: 10px; 
+    font-size: 14px; /* Font size adjusted for consistency */
+}
+
+.db-connected {
+    background-color: #28a745; /* Bootstrap success color */
+    border: 1p solid black;
+}
+
+.db-disconnected {
+    background-color: #dc3545; /* Bootstrap danger color */
+    border: 1p solid black;
+}
