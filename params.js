@@ -9,6 +9,7 @@ var PARAMS = {
 
     // population
     numOrganisms: 100,
+    initialVariation: 1,
     maxOffspring: 5,
     targetValue: 0,
     targetVariance: 5,
@@ -19,8 +20,11 @@ var PARAMS = {
     numLocii: 100,
     mutationRate: 0.05,
     mutationRange: 0.025,
+    targetObservationalNoise: 0.1,
+    adaptiveStepSize: 0.5,
     deathChancePerGeneration: 0.2,
     offspringMigrationChance: 0.0001, // offspring migration
+    adultMigrationChance: 0.0001,
 
     // data gathering
     histogramWidth: 5,

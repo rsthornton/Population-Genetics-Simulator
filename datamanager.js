@@ -6,7 +6,7 @@ class DataManager {
         this.geneticHistogramData = [];
 
         // Initialize the Histogram instance for visualization
-        gameEngine.addGraph(new Histogram(810, 0, this.geneticHistogramData, "Genetic Distribution"));
+        gameEngine.addGraph(new Histogram(800, 0, this.geneticHistogramData, "Genetic Distribution"));
     }
 
     createGeneHistogram() {

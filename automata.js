@@ -70,5 +70,7 @@ class Automata {
                 ctx.restore();
             }
         }
+
+        
     }
 }

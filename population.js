@@ -24,6 +24,11 @@ class Population {
         return totalPhenotype / this.currentPopulation.length;
     }
 
+    averageGenotype() {
+        const totalGenotype = this.currentPopulation.reduce((sum, organism) => sum + organism.genotype, 0);
+        return totalGenotype / this.currentPopulation.length;
+    }
+
     // Advances to the next generation with potential migration
     nextGeneration() {
         const target = this.target;
@@ -34,6 +39,7 @@ class Population {
         if(gameEngine.automata.generation % PARAMS.reportingPeriod === 0) this.populationTimeSeries.push(this.currentPopulation.length);
         this.currentPopulation.forEach(org => {
             let distance = Math.abs(org.phenotype - target);
+            org.adapt(target + generateNormalSample(0,PARAMS.targetObservationalNoise))
             let expectedOffspring = Math.max(maxOffspring * Math.max(0, Math.pow(Math.E, -distance / variance)) - offspringPenalty, 0);
 
             const integerOffspring = Math.floor(expectedOffspring);
@@ -42,26 +48,29 @@ class Population {
             for (let i = 0; i < integerOffspring; i++) {
                 let offspring = new Organism(org);
                 offspring.mutate();
-                this.migrateOffspring(offspring);
+                this.migrate(offspring, PARAMS.offspringMigrationChance);
             }
 
             if (Math.random() < fractionalOffspring) {
                 let offspring = new Organism(org);
                 offspring.mutate();
-                this.migrateOffspring(offspring);
+                this.migrate(offspring, PARAMS.offspringMigrationChance);
             }
 
-            if(Math.random() >= PARAMS.deathChancePerGeneration) this.nextPopulation.push(org);
+            if(Math.random() >= PARAMS.deathChancePerGeneration) {
+                this.migrate(org, PARAMS.adultMigrationChance);
+            }
+
         });
 
         [this.currentPopulation, this.nextPopulation] = [this.nextPopulation, []];
     }
 
     // Handles migration by placing offspring in neighboring cells within the global grid
-    migrateOffspring(offspring) {
+    migrate(offspring, chance) {
         const grid = gameEngine.automata.grid;
     
-        if (Math.random() < PARAMS.offspringMigrationChance) {
+        if (Math.random() < chance) {
             // Define possible offsets for the Moore neighborhood (excluding the center cell)
             const neighborhoodOffsets = [
                 [-1, -1], [-1, 0], [-1, 1],
@@ -90,59 +99,98 @@ class Population {
         const margin = 6;
         const y = this.row * cellHeight;
         const x = this.col * cellWidth;
-        const lineY = y + cellHeight / 2;
-
+    
         const hasPop = this.currentPopulation.length > 0;
     
-        // Function to map phenotype values to colors on a gradient
-        const getColorForPhenotype = (value) => {
-            // Clamp value between -50 and +50
-            value = Math.max(-10*PARAMS.targetVariance, Math.min(10*PARAMS.targetVariance, value));
-        
+        // Function to map values to colors on a gradient
+        const getColorForValue = (value) => {
+            value = Math.max(-10 * PARAMS.targetVariance, Math.min(10 * PARAMS.targetVariance, value));
             if (value < 0) {
-                // Negative values transition from white (0) to blue (-50)
-                const intensity = (50 + value) / 50; // Scale from 1 (white) to 0 (blue)
+                const intensity = (50 + value) / 50;
                 const red = Math.floor(255 * intensity);
                 const green = Math.floor(255 * intensity);
                 return `rgb(${red}, ${green}, 255)`;
             } else {
-                // Positive values transition from white (0) to red (+50)
-                const intensity = (50 - value) / 50; // Scale from 1 (white) to 0 (red)
+                const intensity = (50 - value) / 50;
                 const green = Math.floor(255 * intensity);
                 const blue = Math.floor(255 * intensity);
                 return `rgb(255, ${green}, ${blue})`;
             }
         };
-        
     
-        // Calculate phenotype colors
-        const targetColor = getColorForPhenotype(this.target);
-        const meanPhenotype = this.averagePhenotype();
-        const meanColor = getColorForPhenotype(meanPhenotype);
-        const minPhenotype = Math.min(...this.currentPopulation.map(org => org.phenotype));
-        const maxPhenotype = Math.max(...this.currentPopulation.map(org => org.phenotype));
-        const minColor = getColorForPhenotype(minPhenotype);
-        const maxColor = getColorForPhenotype(maxPhenotype);
+        // Calculate phenotype quartiles
+        const phenotypeValues = this.currentPopulation.map(org => org.phenotype).sort((a, b) => a - b);
+        const genotypeValues = this.currentPopulation.map(org => org.genotype).sort((a, b) => a - b);
+    
+        const getQuartiles = (values) => {
+            const n = values.length;
+            return [
+                values[0], // Min
+                values[Math.floor(n * 0.25)] || values[0],
+                values[Math.floor(n * 0.5)] || values[0],
+                values[Math.floor(n * 0.75)] || values[0],
+                values[n - 1] || values[0] // Max
+            ];
+        };
+    
+        const phenotypeQuartiles = hasPop ? getQuartiles(phenotypeValues) : [];
+        const genotypeQuartiles = hasPop ? getQuartiles(genotypeValues) : [];
+    
+        const phenotypeColors = phenotypeQuartiles.map(getColorForValue);
+        const genotypeColors = genotypeQuartiles.map(getColorForValue);
+    
+        // Population bar parameters
+        const maxPopulation = PARAMS.maxOffspring * PARAMS.populationSoftCap;
+        const populationHeight = Math.min(this.currentPopulation.length / maxPopulation, 1) * (cellHeight - 2 * margin);
+        const barWidth = 5;
+        const barX = x + cellWidth / 2 - barWidth / 2;
+        const barY = y + cellHeight - margin - populationHeight;
     
         // Draw a border with the target color
-        ctx.strokeStyle = targetColor;
+        ctx.strokeStyle = getColorForValue(this.target);
         ctx.lineWidth = margin;
         ctx.strokeRect(x + margin / 2, y + margin / 2, cellWidth - margin, cellHeight - margin);
     
-        // Draw top half with max color
-        ctx.fillStyle = hasPop ? maxColor : "black";
-        ctx.fillRect(x + margin, y + margin, cellWidth - 2 * margin, cellHeight / 2 - margin);
+        // Divide cell into two halves (left for genotype, right for phenotype)
+        const halfWidth = (cellWidth - 2 * margin) / 2;
     
-        // Draw bottom half with min color
-        ctx.fillStyle = hasPop ? minColor : "black";
-        ctx.fillRect(x + margin, y + cellHeight / 2, cellWidth - 2 * margin, cellHeight / 2 - margin);
+        const chunkHeight = (cellHeight - 2 * margin) / 5;
     
-        // Draw center line with mean color
-        ctx.strokeStyle = hasPop ? meanColor : "black";
-        ctx.lineWidth = margin;
-        ctx.beginPath();
-        ctx.moveTo(x + margin, lineY);
-        ctx.lineTo(x + cellWidth - margin, lineY);
-        ctx.stroke();
-    }    
+        if (hasPop) {
+            // Draw genotype quartiles
+            genotypeColors.forEach((color, i) => {
+                ctx.fillStyle = color;
+                ctx.fillRect(x + margin, y + margin + i * chunkHeight, halfWidth, chunkHeight);
+            });
+    
+            // Draw phenotype quartiles
+            phenotypeColors.forEach((color, i) => {
+                ctx.fillStyle = color;
+                ctx.fillRect(x + margin + halfWidth, y + margin + i * chunkHeight, halfWidth, chunkHeight);
+            });
+        } else {
+            // Fill with black when no population
+            ctx.fillStyle = "black";
+            ctx.fillRect(x + margin, y + margin, halfWidth, cellHeight - 2 * margin); // Left side for genotype
+            ctx.fillRect(x + margin + halfWidth, y + margin, halfWidth, cellHeight - 2 * margin); // Right side for phenotype
+        }
+    
+        // Draw population bar
+        ctx.fillStyle = "rgba(128, 128, 128, 0.8)"; // Semi-transparent grey
+        ctx.fillRect(barX, barY, barWidth, populationHeight);
+    
+        // Draw segments in the population bar
+        const segmentHeight = (cellHeight - 2 * margin) / PARAMS.maxOffspring;
+        for (let i = 1; i < PARAMS.maxOffspring; i++) {
+            const segmentY = y + cellHeight - margin - i * segmentHeight;
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(barX, segmentY);
+            ctx.lineTo(barX + barWidth, segmentY);
+            ctx.stroke();
+        }
+    }
+    
+    
 }

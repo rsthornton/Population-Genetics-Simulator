@@ -4,7 +4,8 @@ class Organism {
         for(let i = 0; i < PARAMS.numLocii; i++) {
             this.genes.push(new RealGene(other?.genes[i]));
         }
-        this.phenotype = this.updatePhenotype();
+        this.genotype = this.updatePhenotype();
+        this.phenotype = this.genotype;
     }
 
     updatePhenotype() {
@@ -21,6 +22,14 @@ class Organism {
         }
     }
     
+    adapt(target) {
+        let sign = Math.sign(target - this.phenotype);
+
+        let step = sign*generateNormalSample(PARAMS.adaptiveStepSize, PARAMS.adaptiveStepSize);
+
+        this.phenotype += step;
+    }
+
     update() {
         
     }

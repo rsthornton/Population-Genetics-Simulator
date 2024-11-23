@@ -64,6 +64,7 @@ function loadParameters() {
     PARAMS.numOrganisms = parseInt(document.getElementById("numOrganisms").value);
     PARAMS.maxOffspring = parseInt(document.getElementById("maxOffspring").value);
     PARAMS.targetVariance = parseFloat(document.getElementById("targetVariance").value);
+    PARAMS.initialVariation = parseFloat(document.getElementById("initialVariation").value);
     PARAMS.reproductionVariance = parseFloat(document.getElementById("reproductionVariance").value);
     PARAMS.populationSoftCap = parseInt(document.getElementById("populationSoftCap").value);
 
@@ -73,6 +74,7 @@ function loadParameters() {
     PARAMS.mutationRange = parseFloat(document.getElementById("mutationRange").value);
     PARAMS.deathChancePerGeneration = parseFloat(document.getElementById("deathChancePerGeneration").value);
     PARAMS.offspringMigrationChance = parseFloat(document.getElementById("offspringMigrationChance").value);
+    PARAMS.adultMigrationChance = parseFloat(document.getElementById("adultMigrationChance").value);
     
     console.log(PARAMS);
 }
