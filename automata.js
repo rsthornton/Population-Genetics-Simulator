@@ -71,6 +71,14 @@ class Automata {
             }
         }
 
-        
+        ctx.clearRect(800, 700, 800, 200);
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "left";
+
+        ctx.fillText(`Generation ${this.generation}`, 810, 762);
+        ctx.fillText(`Tick ${gameEngine.clockTick}`, 810, 776);
+        ctx.fillText(`FPS ${gameEngine.timer.ticks.length}`, 810, 790);
+        ctx.font = "10px Arial";
     }
 }

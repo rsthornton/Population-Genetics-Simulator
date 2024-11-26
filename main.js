@@ -21,7 +21,8 @@ if (window.io !== undefined) {
 
 function reset() {
 	loadParameters();
-	gameEngine.entities = [];
+	gameEngine.entities = [];	
+	gameEngine.graphs = [];
 	new Automata();
 };
 

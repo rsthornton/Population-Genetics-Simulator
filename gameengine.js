@@ -15,7 +15,7 @@ window.requestAnimFrame = (function () {
 class Timer {
     constructor() {
         this.gameTime = 0;
-        this.maxStep = 0.05;
+        this.maxStep = 1;
         this.wallLastTimestamp = 0;
         this.ticks = [];
     }
