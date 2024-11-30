@@ -3,7 +3,10 @@ class Population {
         this.row = row;
         this.col = col;
 
-        this.target = target;
+        this.targetChangePeriod = target.changePeriod;
+        this.targetDynamics = target.dynamics;
+        this.targetIndex = target.startIndex;
+        this.target = this.targetDynamics[this.targetIndex];
 
         // Two separate arrays for current and next population
         this.currentPopulation = [];
@@ -29,17 +32,24 @@ class Population {
         return totalGenotype / this.currentPopulation.length;
     }
 
+    currentTarget() {
+        if(gameEngine.automata.generation % this.targetChangePeriod === 0) {
+            this.targetIndex = (this.targetIndex + 1) % this.targetDynamics.length;
+        }
+        return this.targetDynamics[this.targetIndex];
+    }
+
     // Advances to the next generation with potential migration
     nextGeneration() {
-        const target = this.target;
+        this.target = this.currentTarget();
         const variance = PARAMS.reproductionVariance;
         const maxOffspring = PARAMS.maxOffspring;
         const offspringPenalty = this.currentPopulation.length / PARAMS.populationSoftCap;
 
         if(gameEngine.automata.generation % PARAMS.reportingPeriod === 0) this.populationTimeSeries.push(this.currentPopulation.length);
         this.currentPopulation.forEach(org => {
-            let distance = Math.abs(org.phenotype - target);
-            org.adapt(target + generateNormalSample(0,PARAMS.targetObservationalNoise))
+            let distance = Math.abs(org.phenotype - this.target);
+            org.adapt(this.target + generateNormalSample(0,PARAMS.targetObservationalNoise))
             let expectedOffspring = Math.max(maxOffspring * Math.max(0, Math.pow(Math.E, -distance / variance)) - offspringPenalty, 0);
 
             const integerOffspring = Math.floor(expectedOffspring);

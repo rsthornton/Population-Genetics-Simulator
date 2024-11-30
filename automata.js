@@ -10,15 +10,39 @@ class Automata {
         // Initialize current and next grids
         this.grid = [];
 
+        // create population selection dynamics
+        let targetDynamics = [];
+        let val = 0;
+        for(let i = 0; i < this.rows; i++) {
+            targetDynamics.push(val);
+            val = val + PARAMS.targetVariance;
+        }
+        val = val - 2*PARAMS.targetVariance;
+        for(let i = 0; i < 2 * this.rows - 2; i++) {
+            targetDynamics.push(val);
+            val = val - PARAMS.targetVariance;
+        }
+        val = val + 2*PARAMS.targetVariance;
+        for(let i = 0; i < this.rows - 2; i++) {
+            targetDynamics.push(val);
+            val = val + PARAMS.targetVariance;
+        }
+
+        let target = {
+            dynamics: targetDynamics,
+            changePeriod: 1000,
+            startIndex: 0
+        }
+
         for (let i = 0; i < this.rows; i++) {
             const row = [];
             const nextRow = [];
             for (let j = 0; j < this.cols; j++) {
+                target.startIndex = (i - j + targetDynamics.length) % targetDynamics.length;
                 row.push(new Population(i, 
                     j, 
-                    i === 0 && j === 0,
-                    PARAMS.targetValue + i*PARAMS.targetVariance - j*PARAMS.targetVariance
-                    // PARAMS.targetValue + i*generateNormalSample(0,PARAMS.targetVariance) + j*generateNormalSample(0,PARAMS.targetVariance) // stochastic gradient
+                    i === 0 && j === 0, // initial population cell
+                    target
                                 ));  // Current generation
             }
             this.grid.push(row);
