@@ -75,6 +75,8 @@ function loadParameters() {
     PARAMS.deathChancePerGeneration = parseFloat(document.getElementById("deathChancePerGeneration").value);
     PARAMS.offspringMigrationChance = parseFloat(document.getElementById("offspringMigrationChance").value);
     PARAMS.adultMigrationChance = parseFloat(document.getElementById("adultMigrationChance").value);
+    PARAMS.adaptiveStepSize = parseFloat(document.getElementById("adaptiveStepSize").value);
+    PARAMS.targetObservationalNoise = parseFloat(document.getElementById("targetObservationalNoise").value);
     
     console.log(PARAMS);
 }

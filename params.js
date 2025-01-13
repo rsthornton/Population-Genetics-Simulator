@@ -27,12 +27,16 @@ var PARAMS = {
     adultMigrationChance: 0.0001,
 
     // data gathering
-    histogramWidth: 5,
     reportingPeriod: 50,
     epoch: 150000,
 
+    // graphs
+    histogramWidth: 5,
+    graphHeight: 100,
+    graphWidth: 400,
+
     // database
-    db: "domesticationDB",
+    db: "populationGeneticsDB",
     collection: "test"
 };
 

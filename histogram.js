@@ -1,11 +1,16 @@
 class Histogram {
-    constructor(x, y, data, label) {
-        this.xSize = 400;
-        this.ySize = 80;
+    constructor(x, y, data, options) {
         this.x = x;
         this.y = y;
-        this.label = label;
         this.data = data;
+
+        const defaults = {
+            label: "",
+            width: PARAMS.graphWidth,
+            height: PARAMS.graphHeight,
+        };
+        Object.assign(this, defaults, options);
+
         this.ctx = gameEngine.ctx;
         this.maxVal = 0;
     }
@@ -13,10 +18,10 @@ class Histogram {
     }
     draw(ctx) {
         if (!document.getElementById("graphs").checked) return;
-        var length = this.data.length > (this.xSize) ?
-            Math.floor(this.xSize) : this.data.length;
-        var start = this.data.length > (this.xSize) ?
-            this.data.length - (this.xSize) : 0;
+        var length = this.data.length > (this.width) ?
+            Math.floor(this.width) : this.data.length;
+        var start = this.data.length > (this.width) ?
+            this.data.length - (this.width) : 0;
         for (var i = 0; i < length; i++) {
             var maxVal = this.data[i + start].reduce(function (acc, x) {
                 return acc + x;
@@ -28,15 +33,14 @@ class Histogram {
         }
         this.ctx.fillStyle = "#000000";
         this.ctx.textAlign = "center";
-        this.ctx.fillText(this.label, this.x + this.xSize / 2, this.y + this.ySize + 10);
+        this.ctx.fillText(this.label, this.x + this.width / 2, this.y + this.height + 10);
 
         this.ctx.strokeStyle = "#000000";
         this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(this.x, this.y, this.xSize, this.ySize);
+        this.ctx.strokeRect(this.x, this.y, this.width, this.height);
     }
     fill(color, x, y) {
-        //var c = 255 - Math.floor(color * 256);
-        //this.ctx.fillStyle = rgb(c, c, c);
+        this.ctx.fillStyle = "white";
         var c = color * 99 + 1;
         c = 511 - Math.floor(Math.log(c) / Math.log(100) * 512);
         if (c > 255) {
@@ -49,7 +53,7 @@ class Histogram {
         }
 
         var width = 1;
-        var height = Math.floor(this.ySize / 20);
+        var height = Math.floor(this.height / 20);
         this.ctx.fillRect(this.x + (x * width),
             this.y + (y * height),
             width,

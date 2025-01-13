@@ -23,10 +23,9 @@
     <div id="controlPanel">
         <div id="db" class="db-status">Database</div>
         <div id="parameters">
-            <p>Simulation Parameters</p>
 
             <div class="parameter-section">
-                <h3>Initial Parameters</h3>
+                <h3>Environmental Parameters</h3>
                 <label for="numRows">Number of Rows:</label>
                 <input type="number" id="numRows" value="8" /><br />
 
@@ -38,6 +37,19 @@
 
                 <label for="initialVariation">Initial Genetic Variation (std dev):</label>
                 <input type="number" id="initialVariation" value="1" /><br />
+
+                <label for="environmentPattern">Environment Pattern:</label>
+                <select id="environmentPattern">
+                    <option value="random">Random</option>
+                    <option value="uniform">Uniform</option>
+                    <option value="gradient" selected>Gradient</option>
+                    <option value="patches">Patches</option>
+                </select><br />
+                <label for="environmentDynamics">Environment Dynamics:</label>
+                <select id="environmentDynamics">
+                    <option value="static">Static</option>
+                    <option value="cyclic">Cyclic</option>
+                </select><br />
             </div>
 
             <div class="parameter-section">

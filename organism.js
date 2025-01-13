@@ -6,6 +6,7 @@ class Organism {
         }
         this.genotype = this.updatePhenotype();
         this.phenotype = this.genotype;
+        this.cueNoise = generateNormalSample(0,PARAMS.targetObservationalNoise)
     }
 
     updatePhenotype() {
@@ -23,7 +24,7 @@ class Organism {
     }
     
     adapt(target) {
-        let sign = Math.sign(target - this.phenotype);
+        let sign = Math.sign(target + this.cueNoise - this.phenotype);
 
         let step = sign*generateNormalSample(PARAMS.adaptiveStepSize, PARAMS.adaptiveStepSize);
 

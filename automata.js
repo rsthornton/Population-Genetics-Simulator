@@ -2,7 +2,7 @@ class Automata {
     constructor() {
         gameEngine.automata = this;
         gameEngine.addEntity(this);
-        
+
         this.rows = PARAMS.numRows; // Number of rows in the grid
         this.cols = PARAMS.numCols; // Number of columns in the grid
         this.generation = 0;
@@ -10,45 +10,73 @@ class Automata {
         // Initialize current and next grids
         this.grid = [];
 
-        // create population selection dynamics
+
+        this.initializeAutomata();
+        gameEngine.addEntity(new DataManager(this));
+    }
+
+    initializeAutomata() {
+        var environmentPattern = document.getElementById('environmentPattern').value;
+        var environmentDynamics = document.getElementById('environmentDynamics').value;
+
+        // create population selection dynamics [0, ..., 35, ... 0,... -35,... 0] if step is 5
         let targetDynamics = [];
         let val = 0;
-        for(let i = 0; i < this.rows; i++) {
+        for (let i = 0; i < this.rows; i++) {
             targetDynamics.push(val);
             val = val + PARAMS.targetVariance;
         }
-        val = val - 2*PARAMS.targetVariance;
-        for(let i = 0; i < 2 * this.rows - 2; i++) {
+        val = val - 2 * PARAMS.targetVariance;
+        for (let i = 0; i < 2 * this.rows - 2; i++) {
             targetDynamics.push(val);
             val = val - PARAMS.targetVariance;
         }
-        val = val + 2*PARAMS.targetVariance;
-        for(let i = 0; i < this.rows - 2; i++) {
+        val = val + 2 * PARAMS.targetVariance;
+        for (let i = 0; i < this.rows - 2; i++) {
             targetDynamics.push(val);
             val = val + PARAMS.targetVariance;
         }
 
-        let target = {
+        let target = {};
+        target = {
             dynamics: targetDynamics,
-            changePeriod: 1000,
+            changePeriod: environmentDynamics === "cyclic" ? 1000 : 0,
             startIndex: 0
-        }
+        };
+
 
         for (let i = 0; i < this.rows; i++) {
             const row = [];
             const nextRow = [];
             for (let j = 0; j < this.cols; j++) {
-                target.startIndex = (i - j + targetDynamics.length) % targetDynamics.length;
-                row.push(new Population(i, 
-                    j, 
+                switch (environmentPattern) {
+                    case "random":
+                        target.startIndex = randomInt(targetDynamics.length);
+                        break;
+                    case "uniform":
+                        target.startIndex = 0;
+                        break;
+                    case "gradient":
+                        target.startIndex = (i - j + targetDynamics.length) % targetDynamics.length;
+                        break;
+                    case "patches":
+                        let ii = Math.floor(i / this.cols * 2);
+                        let jj = Math.floor(j / this.rows * 2);
+                        let val = ii - jj;
+                        target.startIndex = (val * (PARAMS.numCols - 1) + targetDynamics.length) % targetDynamics.length;
+                        if(ii === jj && ii === 1) {  
+                            target.startIndex = (2 * PARAMS.numCols - 2 + targetDynamics.length) % targetDynamics.length;
+                        }
+                        break;
+                }
+                row.push(new Population(i,
+                    j,
                     i === 0 && j === 0, // initial population cell
                     target
-                                ));  // Current generation
+                ));  // Current generation
             }
             this.grid.push(row);
         }
-
-        gameEngine.addEntity(new DataManager(this));
     }
 
     // Advance each cell's population to the next generation

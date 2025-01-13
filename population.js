@@ -13,6 +13,11 @@ class Population {
         this.nextPopulation = [];
 
         this.populationTimeSeries = [];
+        this.geneHistogram = null; // will be attached by DataManager
+
+        this.drawState = 0;
+        // 0 = quartiles
+        // 1 = gene histogram
 
         // Initialize the current population
         if (populated) {
@@ -20,6 +25,10 @@ class Population {
                 this.currentPopulation.push(new Organism());
             }
         }
+    }
+
+    toggleDisplay() {
+        this.drawState = (this.drawState + 1) % 2;
     }
 
     averagePhenotype() {
@@ -33,7 +42,7 @@ class Population {
     }
 
     currentTarget() {
-        if(gameEngine.automata.generation % this.targetChangePeriod === 0) {
+        if (this.targetChangePeriod !== 0 && gameEngine.automata.generation % this.targetChangePeriod === 0) {
             this.targetIndex = (this.targetIndex + 1) % this.targetDynamics.length;
         }
         return this.targetDynamics[this.targetIndex];
@@ -41,15 +50,21 @@ class Population {
 
     // Advances to the next generation with potential migration
     nextGeneration() {
+        if (gameEngine.click) {
+            if (gameEngine.click.row === this.row && gameEngine.click.col === this.col) {
+                this.toggleDisplay();
+            }
+        }
+
         this.target = this.currentTarget();
         const variance = PARAMS.reproductionVariance;
         const maxOffspring = PARAMS.maxOffspring;
         const offspringPenalty = this.currentPopulation.length / PARAMS.populationSoftCap;
 
-        if(gameEngine.automata.generation % PARAMS.reportingPeriod === 0) this.populationTimeSeries.push(this.currentPopulation.length);
+        if (gameEngine.automata.generation % PARAMS.reportingPeriod === 0) this.populationTimeSeries.push(this.currentPopulation.length);
         this.currentPopulation.forEach(org => {
             let distance = Math.abs(org.phenotype - this.target);
-            org.adapt(this.target + generateNormalSample(0,PARAMS.targetObservationalNoise))
+            org.adapt(this.target)
             let expectedOffspring = Math.max(maxOffspring * Math.max(0, Math.pow(Math.E, -distance / variance)) - offspringPenalty, 0);
 
             const integerOffspring = Math.floor(expectedOffspring);
@@ -67,7 +82,7 @@ class Population {
                 this.migrate(offspring, PARAMS.offspringMigrationChance);
             }
 
-            if(Math.random() >= PARAMS.deathChancePerGeneration) {
+            if (Math.random() >= PARAMS.deathChancePerGeneration) {
                 this.migrate(org, PARAMS.adultMigrationChance);
             }
 
@@ -79,22 +94,22 @@ class Population {
     // Handles migration by placing offspring in neighboring cells within the global grid
     migrate(offspring, chance) {
         const grid = gameEngine.automata.grid;
-    
+
         if (Math.random() < chance) {
             // Define possible offsets for the Moore neighborhood (excluding the center cell)
             const neighborhoodOffsets = [
                 [-1, -1], [-1, 0], [-1, 1],
-                [0, -1], /* [0, 0] */ [0, 1],
+                [0, -1], /* [0, 0] */[0, 1],
                 [1, -1], [1, 0], [1, 1]
             ];
-    
+
             // Randomly select one of the 8 neighboring cells
             const [rowOffset, colOffset] = neighborhoodOffsets[Math.floor(Math.random() * neighborhoodOffsets.length)];
-    
+
             // Calculate the new row and column, wrapping around the grid edges (torus behavior)
             const newRow = (this.row + rowOffset + PARAMS.numRows) % PARAMS.numRows;
             const newCol = (this.col + colOffset + PARAMS.numCols) % PARAMS.numCols;
-    
+
             // Place the offspring in the selected neighboring cell
             grid[newRow][newCol].nextPopulation.push(offspring);
         } else {
@@ -109,9 +124,9 @@ class Population {
         const margin = 6;
         const y = this.row * cellHeight;
         const x = this.col * cellWidth;
-    
+
         const hasPop = this.currentPopulation.length > 0;
-    
+
         // Function to map values to colors on a gradient
         const getColorForValue = (value) => {
             value = Math.max(-10 * PARAMS.targetVariance, Math.min(10 * PARAMS.targetVariance, value));
@@ -127,11 +142,11 @@ class Population {
                 return `rgb(255, ${green}, ${blue})`;
             }
         };
-    
+
         // Calculate phenotype quartiles
         const phenotypeValues = this.currentPopulation.map(org => org.phenotype).sort((a, b) => a - b);
         const genotypeValues = this.currentPopulation.map(org => org.genotype).sort((a, b) => a - b);
-    
+
         const getQuartiles = (values) => {
             const n = values.length;
             return [
@@ -142,65 +157,69 @@ class Population {
                 values[n - 1] || values[0] // Max
             ];
         };
-    
+
         const phenotypeQuartiles = hasPop ? getQuartiles(phenotypeValues) : [];
         const genotypeQuartiles = hasPop ? getQuartiles(genotypeValues) : [];
-    
+
         const phenotypeColors = phenotypeQuartiles.map(getColorForValue);
         const genotypeColors = genotypeQuartiles.map(getColorForValue);
-    
+
         // Population bar parameters
         const maxPopulation = PARAMS.maxOffspring * PARAMS.populationSoftCap;
         const populationHeight = Math.min(this.currentPopulation.length / maxPopulation, 1) * (cellHeight - 2 * margin);
         const barWidth = 5;
         const barX = x + cellWidth / 2 - barWidth / 2;
         const barY = y + cellHeight - margin - populationHeight;
-    
+
+        // Divide cell into two halves (left for genotype, right for phenotype)
+        const halfWidth = (cellWidth - 2 * margin) / 2;
+
+        const chunkHeight = (cellHeight - 2 * margin) / 5;
+
+         if (this.drawState === 0) {
+            if (hasPop) {
+                // Draw genotype quartiles
+                genotypeColors.forEach((color, i) => {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x + margin, y + margin + i * chunkHeight, halfWidth, chunkHeight);
+                });
+
+                // Draw phenotype quartiles
+                phenotypeColors.forEach((color, i) => {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x + margin + halfWidth, y + margin + i * chunkHeight, halfWidth, chunkHeight);
+                });
+            } else {
+                // Fill with black when no population
+                ctx.fillStyle = "black";
+                ctx.fillRect(x + margin, y + margin, halfWidth, cellHeight - 2 * margin); // Left side for genotype
+                ctx.fillRect(x + margin + halfWidth, y + margin, halfWidth, cellHeight - 2 * margin); // Right side for phenotype
+            }
+
+            // Draw population bar
+            ctx.fillStyle = "rgba(128, 128, 128, 0.8)"; // Semi-transparent grey
+            ctx.fillRect(barX, barY, barWidth, populationHeight);
+
+            // Draw segments in the population bar
+            const segmentHeight = (cellHeight - 2 * margin) / PARAMS.maxOffspring;
+            for (let i = 1; i < PARAMS.maxOffspring; i++) {
+                const segmentY = y + cellHeight - margin - i * segmentHeight;
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(barX, segmentY);
+                ctx.lineTo(barX + barWidth, segmentY);
+                ctx.stroke();
+            }
+
+        } else if (this.drawState === 1) {
+            this.geneHistogram.draw(ctx);
+        }
+
         // Draw a border with the target color
         ctx.strokeStyle = getColorForValue(this.target);
         ctx.lineWidth = margin;
         ctx.strokeRect(x + margin / 2, y + margin / 2, cellWidth - margin, cellHeight - margin);
-    
-        // Divide cell into two halves (left for genotype, right for phenotype)
-        const halfWidth = (cellWidth - 2 * margin) / 2;
-    
-        const chunkHeight = (cellHeight - 2 * margin) / 5;
-    
-        if (hasPop) {
-            // Draw genotype quartiles
-            genotypeColors.forEach((color, i) => {
-                ctx.fillStyle = color;
-                ctx.fillRect(x + margin, y + margin + i * chunkHeight, halfWidth, chunkHeight);
-            });
-    
-            // Draw phenotype quartiles
-            phenotypeColors.forEach((color, i) => {
-                ctx.fillStyle = color;
-                ctx.fillRect(x + margin + halfWidth, y + margin + i * chunkHeight, halfWidth, chunkHeight);
-            });
-        } else {
-            // Fill with black when no population
-            ctx.fillStyle = "black";
-            ctx.fillRect(x + margin, y + margin, halfWidth, cellHeight - 2 * margin); // Left side for genotype
-            ctx.fillRect(x + margin + halfWidth, y + margin, halfWidth, cellHeight - 2 * margin); // Right side for phenotype
-        }
-    
-        // Draw population bar
-        ctx.fillStyle = "rgba(128, 128, 128, 0.8)"; // Semi-transparent grey
-        ctx.fillRect(barX, barY, barWidth, populationHeight);
-    
-        // Draw segments in the population bar
-        const segmentHeight = (cellHeight - 2 * margin) / PARAMS.maxOffspring;
-        for (let i = 1; i < PARAMS.maxOffspring; i++) {
-            const segmentY = y + cellHeight - margin - i * segmentHeight;
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(barX, segmentY);
-            ctx.lineTo(barX + barWidth, segmentY);
-            ctx.stroke();
-        }
+
     }
-    
-    
 }

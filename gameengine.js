@@ -56,6 +56,7 @@ class GameEngine {
         this.surfaceWidth = this.ctx.canvas.width;
         this.surfaceHeight = this.ctx.canvas.height;
         this.timer = new Timer();
+        this.startInput();
     }
     start() {
         console.log("starting game");
@@ -66,6 +67,18 @@ class GameEngine {
         })();
     }
     startInput() {
+        const cellWidth = PARAMS.pixelDimension / PARAMS.numCols;
+        const cellHeight = PARAMS.pixelDimension / PARAMS.numRows;
+
+        function getXY(event) {
+            return { 
+                col: Math.floor(event.x / cellWidth),
+                row: Math.floor(event.y / cellHeight)
+            }
+        }
+        this.ctx.canvas.addEventListener('click', (event) => {
+            this.click = getXY(event);
+        });
     }
     addEntity(entity) {
         this.entities.push(entity);
@@ -81,10 +94,6 @@ class GameEngine {
             }
         }
         this.ctx.clearRect(0, 0, this.ctx.canvas.height, this.ctx.canvas.height); // clear sim square only
-        for (var i = 0; i < this.entities.length; i++) {
-            this.entities[i].draw(this.ctx);
-        }
-        this.ctx.clearRect(0, 0, this.ctx.canvas.height, this.ctx.canvas.width); // clear sim square only
         for (var i = 0; i < this.entities.length; i++) {
             this.entities[i].draw(this.ctx);
         }
@@ -111,6 +120,7 @@ class GameEngine {
         var loops = PARAMS.updatesPerDraw;
         while (loops-- > 0) this.update();
         this.draw();
+        this.click = null;
     }
 };
 
