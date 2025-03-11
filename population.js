@@ -6,6 +6,7 @@ class Population {
         this.targetChangePeriod = target.changePeriod;
         this.targetDynamics = target.dynamics;
         this.targetIndex = target.startIndex;
+        this.targetType = target.type;
         this.target = this.targetDynamics[this.targetIndex];
 
         // Two separate arrays for current and next population
@@ -43,7 +44,16 @@ class Population {
 
     currentTarget() {
         if (this.targetChangePeriod !== 0 && gameEngine.automata.generation % this.targetChangePeriod === 0) {
-            this.targetIndex = (this.targetIndex + 1) % this.targetDynamics.length;
+            if (this.targetType === "cyclic") {
+                // Cyclic pattern - wrap around the array
+                this.targetIndex = (this.targetIndex + 1) % this.targetDynamics.length;
+            } else if (this.targetType === "directional") {
+                // Directional pattern - increment, reset when reaching the end
+                this.targetIndex = (this.targetIndex + 1);
+                if (this.targetIndex >= this.targetDynamics.length) {
+                    this.targetIndex = 0; // Reset to start
+                }
+            }
         }
         return this.targetDynamics[this.targetIndex];
     }

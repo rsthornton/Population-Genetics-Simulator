@@ -18,62 +18,76 @@ class Automata {
     initializeAutomata() {
         var environmentPattern = document.getElementById('environmentPattern').value;
         var environmentDynamics = document.getElementById('environmentDynamics').value;
-
-        // create population selection dynamics [0, ..., 35, ... 0,... -35,... 0] if step is 5
+    
+        // Generate target dynamics based on parameters
         let targetDynamics = [];
-        let val = 0;
-        for (let i = 0; i < this.rows; i++) {
-            targetDynamics.push(val);
-            val = val + PARAMS.targetVariance;
+        let min = PARAMS.targetMin;
+        let max = PARAMS.targetMax;
+        let step = PARAMS.targetStep;
+        let period = PARAMS.targetPeriod;
+        
+        if (environmentDynamics === "cyclic") {
+            // Generate a cyclic pattern: min to max, then back to min
+            for (let val = 0; val <= max; val += step) {
+                targetDynamics.push(val);
+            }
+            for (let val = max - step; val > min; val -= step) {
+                targetDynamics.push(val);
+            }
+            for (let val = min; val < 0; val += step) {
+                targetDynamics.push(val);
+            }
+        } else if (environmentDynamics === "directional") {
+            // Generate a continuous directional pattern from min to max
+            for (let val = min; val <= max; val += step) {
+                targetDynamics.push(val);
+            }
+        } else {
+            // No dynamics - just use a single value
+            targetDynamics.push(0);
         }
-        val = val - 2 * PARAMS.targetVariance;
-        for (let i = 0; i < 2 * this.rows - 2; i++) {
-            targetDynamics.push(val);
-            val = val - PARAMS.targetVariance;
-        }
-        val = val + 2 * PARAMS.targetVariance;
-        for (let i = 0; i < this.rows - 2; i++) {
-            targetDynamics.push(val);
-            val = val + PARAMS.targetVariance;
-        }
-
+    
         let target = {};
         target = {
             dynamics: targetDynamics,
-            changePeriod: environmentDynamics === "cyclic" ? 1000 : 0,
+            changePeriod: environmentDynamics === "none" ? 0 : period,
+            type: environmentDynamics,
             startIndex: 0
         };
-
-
+    
+        // Initialize current and next grids
+        this.grid = [];
+    
+        // Create grid and populate cells
         for (let i = 0; i < this.rows; i++) {
             const row = [];
-            const nextRow = [];
             for (let j = 0; j < this.cols; j++) {
+                // Create a new target object for each cell
+                let cellTarget = Object.assign({}, target);
+                
+                // Set startIndex based on pattern
                 switch (environmentPattern) {
                     case "random":
-                        target.startIndex = randomInt(targetDynamics.length);
+                        cellTarget.startIndex = randomInt(targetDynamics.length);
                         break;
                     case "uniform":
-                        target.startIndex = 0;
+                        cellTarget.startIndex = 0;
                         break;
                     case "gradient":
-                        target.startIndex = (i - j + targetDynamics.length) % targetDynamics.length;
+                        cellTarget.startIndex = (i - j + targetDynamics.length) % targetDynamics.length;
                         break;
                     case "patches":
                         let ii = Math.floor(i / this.cols * 2);
                         let jj = Math.floor(j / this.rows * 2);
                         let val = ii - jj;
-                        target.startIndex = (val * (PARAMS.numCols - 1) + targetDynamics.length) % targetDynamics.length;
+                        cellTarget.startIndex = (val * (PARAMS.numCols - 1) + targetDynamics.length) % targetDynamics.length;
                         if(ii === jj && ii === 1) {  
-                            target.startIndex = (2 * PARAMS.numCols - 2 + targetDynamics.length) % targetDynamics.length;
+                            cellTarget.startIndex = (2 * PARAMS.numCols - 2 + targetDynamics.length) % targetDynamics.length;
                         }
                         break;
                 }
-                row.push(new Population(i,
-                    j,
-                    i === 0 && j === 0, // initial population cell
-                    target
-                ));  // Current generation
+                
+                row.push(new Population(i, j, i === 0 && j === 0, cellTarget));
             }
             this.grid.push(row);
         }

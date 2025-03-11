@@ -78,6 +78,12 @@ function loadParameters() {
     PARAMS.adaptiveStepSize = parseFloat(document.getElementById("adaptiveStepSize").value);
     PARAMS.targetObservationalNoise = parseFloat(document.getElementById("targetObservationalNoise").value);
     
+    // Environment dynamics parameters
+    PARAMS.targetMin = parseFloat(document.getElementById("targetMin").value);
+    PARAMS.targetMax = parseFloat(document.getElementById("targetMax").value);
+    PARAMS.targetStep = parseFloat(document.getElementById("targetStep").value);
+    PARAMS.targetPeriod = parseInt(document.getElementById("targetPeriod").value);
+
     console.log(PARAMS);
 }
 

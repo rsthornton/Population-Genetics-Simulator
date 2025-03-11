@@ -7,6 +7,12 @@ var PARAMS = {
     numRows: 8,
     numCols: 8,
 
+    // Environment dynamics
+    targetMin: -35,
+    targetMax: 35,
+    targetStep: 5,
+    targetPeriod: 1000,
+
     // population
     numOrganisms: 100,
     initialVariation: 1,
