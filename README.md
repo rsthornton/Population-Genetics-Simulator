@@ -74,8 +74,9 @@ Population-Genetics-Simulator/
 
 1. Download BERT from [Halcyonic's GitHub repository](https://github.com/halcyonic-systems/bert)
 2. Import one of the model files from the `bert/models/` directory
-3. Adjust parameters in the BERT model
-4. Export the model as JSON
+3. Explore the model
+4. Adjust parameters in the BERT model (simulation integration not yet implemented)
+5. Export the model as JSON (simulation integration not yet implemented)
 
 **Important Note**: The connector script (`bert_to_sim.py`) is currently only a conceptual placeholder and has not been developed or tested at all. It represents a future development direction showing how BERT models might be converted to simulation parameters.
 
